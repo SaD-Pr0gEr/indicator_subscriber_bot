@@ -1,5 +1,6 @@
 import typing
 
+from aiogram import Dispatcher
 from aiogram.dispatcher.filters import BoundFilter
 
 from tgbot.config import Config
@@ -17,3 +18,6 @@ class AdminFilter(BoundFilter):
         config: Config = obj.bot.get('config')
         return (obj.from_user.id in config.tg_bot.admin_ids) == self.is_admin
 
+
+def register_admin_filters(dp: Dispatcher):
+    dp.filters_factory.bind(AdminFilter)
