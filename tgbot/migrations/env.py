@@ -1,12 +1,13 @@
 from logging.config import fileConfig
 
+from environs import Env
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
-from tgbot.config import BASE_DIR
+from config import BASE_DIR
 
-from tgbot.models.models import db
+from models.models import db
 
 config = context.config
 
