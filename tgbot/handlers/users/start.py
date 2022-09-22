@@ -2,6 +2,7 @@ from aiogram import Dispatcher
 from aiogram.dispatcher import FSMContext
 from aiogram.types import Message, ContentType
 
+from tgbot.data.commands import COMMANDS
 from tgbot.filters.chat import PrivateChat
 from tgbot.keyboards.reply import USER_SEND_NUMBER
 from tgbot.misc.states import UserSignUp
@@ -16,8 +17,7 @@ async def user_start(message: Message):
     if not user:
         await UserSignUp.phone_number.set()
         await message.reply(
-            "Привет! Чтобы подписаться отправьте мне свой номер телефона полностью\n"
-            "Пример: +998901234567",
+            "Привет! Чтобы подписаться отправьте мне свой номер телефона",
             reply_markup=USER_SEND_NUMBER
         )
         return
@@ -51,6 +51,14 @@ async def get_user_number(message: Message, state: FSMContext):
     )
 
 
+async def call_command(message: Message):
+    await message.bot.send_contact(
+        message.from_user.id,
+        "+998991501771",
+        "Indicator UZ"
+    )
+
+
 def register_user_start_handlers(dp: Dispatcher):
     dp.register_message_handler(
         user_start, PrivateChat(),
@@ -61,4 +69,8 @@ def register_user_start_handlers(dp: Dispatcher):
         get_user_number, PrivateChat(),
         state=UserSignUp.phone_number,
         content_types=ContentType.CONTACT
+    )
+    dp.register_message_handler(
+        call_command, PrivateChat(),
+        text=COMMANDS["call_us"]
     )
