@@ -15,15 +15,15 @@ async def admin_start(message: Message):
 
 
 async def all_subscribers(message: Message):
-    subs = await Users.query.gino.all()
-    if not subs:
+    subs_db = await Users.query.gino.all()
+    if not subs_db:
         await message.answer("Подписчиков нет)")
         return
-    subs = '\n'.join(list(map(
+    text = '\n'.join(list(map(
         lambda model: f"@{model.username or model.tg_id}",
-        subs
+        subs_db
     )))
-    await message.answer(f"Список подписчиков\n{subs}\nИтого: {len(subs)}")
+    await message.answer(f"Список подписчиков\n{text}\nИтого: {len(subs_db)} шт.")
 
 
 def register_start_handlers(dp: Dispatcher):

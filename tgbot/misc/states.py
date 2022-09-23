@@ -11,3 +11,9 @@ class AddAdminState(StatesGroup):
 
 class DeleteAdminState(StatesGroup):
     callback_state = State()
+
+
+class PostPublishState(StatesGroup):
+    post_name = State()
+    post_title = State()
+    post_preview = State()
