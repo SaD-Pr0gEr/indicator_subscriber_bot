@@ -17,3 +17,12 @@ class PostPublishState(StatesGroup):
     post_name = State()
     post_title = State()
     post_preview = State()
+
+
+class AddDrawState(StatesGroup):
+    name = State()
+    title = State()
+    photo = State()
+    start_date = State()
+    end_date = State()
+    winners_count = State()

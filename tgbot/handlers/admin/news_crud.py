@@ -44,6 +44,7 @@ async def get_post_preview(message: Message, state: FSMContext):
         destination_dir=photos_dir
     )
     await state.finish()
+    await message.answer("Отправляю всем...")
     for user in await Users.query.gino.all():
         await message.bot.send_photo(
             user.tg_id,
