@@ -26,3 +26,8 @@ class AddDrawState(StatesGroup):
     start_date = State()
     end_date = State()
     winners_count = State()
+
+
+class CancelDrawState(StatesGroup):
+    draw = State()
+    confirm = State()

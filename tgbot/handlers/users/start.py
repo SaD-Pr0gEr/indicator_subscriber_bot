@@ -34,12 +34,12 @@ async def get_user_number(message: Message, state: FSMContext):
     check_number = await Users.query.where(
         Users.phone_number == number
     ).gino.first()
+    await state.finish()
     if check_number:
         await message.answer(
             "Пользователь с таким номером телефона уже существует!"
         )
         return
-    await state.finish()
     await Users.create(
         tg_id=message.from_user.id,
         username=message.from_user.username,

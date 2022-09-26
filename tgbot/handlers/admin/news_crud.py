@@ -4,7 +4,7 @@ from aiogram import Dispatcher
 from aiogram.dispatcher import FSMContext
 from aiogram.types import Message, InputFile, ContentType
 
-from tgbot.config import BASE_DIR
+from tgbot.config import NEWS_PHOTOS_DIR
 from tgbot.data.commands import COMMANDS
 from tgbot.filters.chat import PrivateChat
 from tgbot.filters.users import StaffFilter
@@ -38,10 +38,9 @@ async def get_post_preview(message: Message, state: FSMContext):
         post_name = data["post_name"]
         post_title = data["post_title"]
     photo_id = message.photo[-1].file_id
-    photos_dir = BASE_DIR / "photos/news"
     filename = await message.bot.download_file_by_id(
         photo_id,
-        destination_dir=photos_dir
+        destination_dir=NEWS_PHOTOS_DIR
     )
     await state.finish()
     await message.answer("Отправляю всем...")

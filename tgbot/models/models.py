@@ -42,6 +42,7 @@ class Draw(db.Model):
     title = Column(String(200))
     preview_photo_path = Column(String)
     active = Column(Boolean, default=True)
+    cancelled = Column(Boolean, default=False)
     start_date = Column(DateTime)
     end_date = Column(DateTime)
     winners_count = Column(Integer)

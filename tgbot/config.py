@@ -5,6 +5,11 @@ from environs import Env
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+MAIN_DATE_FORMAT = "%d.%m.%Y %H:%M:%S"
+HUMAN_READABLE_DATE_FORMAT = "дд.мм.ГГГГ!часы:минуты:секунды"
+MEDIA_DIR = BASE_DIR / "media"
+DRAW_PHOTOS_DIR = MEDIA_DIR / "photos/draw"
+NEWS_PHOTOS_DIR = MEDIA_DIR / "photos/news"
 
 
 @dataclass
