@@ -66,8 +66,19 @@ async def draw_end_date(message: Message, state: FSMContext):
 async def draw_winners(message: Message, state: FSMContext):
     date_text = message.text.replace("!", " ")
     try:
-        end_date = datetime.strptime(date_text, MAIN_DATE_FORMAT).strftime(MAIN_DATE_FORMAT)
+        end_date = datetime.strptime(date_text, MAIN_DATE_FORMAT)
+        async with state.proxy() as data:
+            start_date = datetime.strptime(data["start_date"], MAIN_DATE_FORMAT)
+        if end_date < start_date:
+            await message.answer(
+                "Дата окончания не может быть меньше даты начала!\n"
+                "Отправьте корректную дату ещё раз"
+            )
+            return
+        start_date = start_date.strftime(MAIN_DATE_FORMAT)
+        end_date = end_date.strftime(MAIN_DATE_FORMAT)
         await state.update_data(end_date=end_date)
+        await state.update_data(start_date=start_date)
         await message.answer("Теперь введите кол-во победителей в розыгрыше")
         await AddDrawState.winners_count.set()
     except ValueError:
