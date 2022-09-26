@@ -31,3 +31,7 @@ class AddDrawState(StatesGroup):
 class CancelDrawState(StatesGroup):
     draw = State()
     confirm = State()
+
+
+class ParticipateDrawState(StatesGroup):
+    choose_draw = State()

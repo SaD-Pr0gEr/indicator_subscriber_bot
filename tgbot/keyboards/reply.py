@@ -23,7 +23,7 @@ ADMIN_COMMANDS = ReplyKeyboardMarkup([
 
 
 USER_COMMANDS = ReplyKeyboardMarkup([
-    [CALL_US]
+    [CALL_US, ACTIVE_DRAWS]
 ], resize_keyboard=True)
 
 
