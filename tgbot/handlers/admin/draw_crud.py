@@ -3,12 +3,14 @@ from datetime import datetime
 
 from aiogram import Dispatcher
 from aiogram.dispatcher import FSMContext
-from aiogram.types import Message, ContentType, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
+from aiogram.types import Message, ContentType, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, InputFile
 
 from tgbot.config import MAIN_DATE_FORMAT, DRAW_PHOTOS_DIR, HUMAN_READABLE_DATE_FORMAT
 from tgbot.data.commands import COMMANDS
-from tgbot.misc.states import AddDrawState, CancelDrawState
-from tgbot.models.models import Draw, Users
+from tgbot.filters.chat import PrivateChat
+from tgbot.filters.users import StaffFilter
+from tgbot.misc.states import AddDrawState, CancelDrawState, GetDrawInfoState
+from tgbot.models.models import Draw, Users, DrawMember, db
 from tgbot.utils.mailing import draw_start, draw_end, draw_cancelled
 
 
@@ -155,7 +157,7 @@ async def active_draws_list(message: Message):
 async def all_draws(message: Message):
     draws_list = await Draw.query.gino.all()
     if not draws_list:
-        await message.answer("Активных розыгрышей нет!")
+        await message.answer("Розыгрышей нет!")
         return
     draws_list = tuple(map(
         lambda model: f"ID: {model.Id}\n{model.name}\n"
@@ -229,6 +231,87 @@ async def cancel_draw_confirm_callback(callback: CallbackQuery, state: FSMContex
     )
 
 
+async def get_draw_members(message: Message):
+    async with db.transaction():
+        cursor = await Draw.query.gino.iterate()
+        draws = await cursor.many(2)
+    if not draws:
+        await message.answer("Розыгрышей нет")
+        return
+    await GetDrawInfoState.choose_draw.set()
+    keyboard = InlineKeyboardMarkup()
+    send_draw: Draw = draws[0]
+    keyboard.add(InlineKeyboardButton(
+        "Следующий >>",
+        callback_data=f"!{draws[1]}"
+    )) if len(draws) > 1 else None
+    keyboard.add(InlineKeyboardButton(
+        "Список участников",
+        callback_data=f"{send_draw.Id}"
+    ))
+    await message.answer("Отлично! Выберите подходящий розыгрыш")
+    await message.bot.send_photo(
+        message.chat.id,
+        InputFile(send_draw.preview_photo_path),
+        caption=f"{send_draw.name}\n{send_draw.title}\n"
+                f"Победители: {send_draw.winners_count}\n"
+                f"Даты проведения: {send_draw.start_date} - {send_draw.end_date}",
+        reply_markup=keyboard
+    )
+
+
+async def choose_draw(callback: CallbackQuery, state: FSMContext):
+    if "!" in callback.data:
+        keyboard = InlineKeyboardMarkup()
+        skip_count = int(callback.data.split("!")[-1])
+        async with db.transaction():
+            cursor = Draw.query.gino.iterate()
+            if skip_count:
+                await cursor.forward(skip_count)
+            draws = await cursor.many(2)
+        keyboard.add(InlineKeyboardButton(
+            ">> Следующий",
+            callback_data=f"!{skip_count + 1}"
+        )) if len(draws) > 1 else None
+        keyboard.add(InlineKeyboardButton(
+            "<< Предыдущий",
+            callback_data=f"!{skip_count - 1}"
+        )) if skip_count >= 0 else None
+        send_draw = draws[0]
+        await callback.bot.delete_message(
+            callback.from_user.id,
+            callback.message.message_id
+        )
+        await callback.bot.send_photo(
+            callback.from_user.id,
+            InputFile(send_draw.preview_photo_path),
+            caption=f"{send_draw.name}\n{send_draw.title}\n"
+                    f"Победители: {send_draw.winners_count}\n"
+                    f"Даты проведения: {send_draw.start_date} - {send_draw.end_date}",
+            reply_markup=keyboard
+        )
+    else:
+        members = await DrawMember.join(Users).select().where(
+            DrawMember.draw == int(callback.data)
+        ).gino.all()
+        members_list = []
+        for member in members:
+            member_username = None
+            if isinstance(member[-3], str):
+                member_username = member[-3]
+            member_number = member[-1]
+            members_list.append(f"{f'@{member_username}' if member_username else member_number}")
+        await callback.bot.delete_message(
+            callback.from_user.id,
+            callback.message.message_id
+        )
+        await callback.bot.send_message(
+            callback.from_user.id,
+            '\n'.join(members_list)
+        )
+        await state.finish()
+
+
 def register_draw_handlers(dp: Dispatcher):
     dp.register_message_handler(
         plan_draw_command, text=COMMANDS["add_draw"],
@@ -276,4 +359,11 @@ def register_draw_handlers(dp: Dispatcher):
     )
     dp.register_callback_query_handler(
         cancel_draw_confirm_callback, state=CancelDrawState.confirm
+    )
+    dp.register_message_handler(
+        get_draw_members, PrivateChat(),
+        StaffFilter(), text=COMMANDS["draw_members"]
+    )
+    dp.register_callback_query_handler(
+        choose_draw, state=GetDrawInfoState.choose_draw
     )
