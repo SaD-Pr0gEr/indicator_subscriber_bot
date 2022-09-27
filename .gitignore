@@ -160,3 +160,5 @@ cython_debug/
 media/
 *.rdb
 logs/all/all.log
+*.db
+*.db-journal

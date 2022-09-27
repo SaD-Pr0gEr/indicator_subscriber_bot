@@ -5,12 +5,34 @@ from aiogram import Bot, Dispatcher
 from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from aiogram.contrib.fsm_storage.redis import RedisStorage2
 
-from tgbot.config import load_config, BASE_DIR
+from tgbot.config import load_config, BASE_DIR, Config
 from tgbot.filters import register_all_filters
 from tgbot.handlers import register_all_handlers
-from tgbot.models.models import db, Draw, DrawMember
+from tgbot.models.models import db
+from tgbot.utils.mailing import draw_monitoring
 
 logger = logging.getLogger(__name__)
+
+
+async def on_startup(bot: Bot):
+    config: Config = bot['config']
+    for i in config.tg_bot.admin_ids:
+        await bot.send_message(
+            i,
+            "Бот запущен! Идёт проверка и обновление розыгрышей"
+        )
+    task = asyncio.create_task(draw_monitoring(bot))
+    await asyncio.gather(task)
+
+
+async def on_shutdown(dp: Dispatcher):
+    config: Config = dp.bot['config']
+    for i in config.tg_bot.admin_ids:
+        await dp.bot.send_message(
+            i,
+            "Бот остановился! Проверьте сервер если сами её не отключили!\n"
+            "После запуска бот проверит и обновит все розыгрышы"
+        )
 
 
 async def main():
@@ -34,7 +56,10 @@ async def main():
         await db.set_bind(f"postgresql://"
                           f"{config.db.user}:{config.db.password}@"
                           f"{config.db.host}:5432/{config.db.database}")
-        await dp.start_polling()
+        task_1 = dp.start_polling()
+        task_2 = on_startup(bot)
+        await asyncio.gather(task_1, task_2)
+        await on_shutdown(dp)
     finally:
         await dp.storage.close()
         await dp.storage.wait_closed()

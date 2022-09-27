@@ -1,9 +1,13 @@
+import asyncio
+from datetime import datetime
 from typing import Union
 
 from aiogram import Bot
 from aiogram.types import InputFile
 
+from tgbot.config import Config, DRAW_MEMBERS_FILE_PATH
 from tgbot.models.models import Draw, Users, DrawMember
+from tgbot.services.excel import DrawMembersList
 
 
 async def draw_start(bot: Bot, users_list: Union[list[Users], tuple[Users]], draw: Draw) -> None:
@@ -42,3 +46,83 @@ async def draw_cancelled(bot: Bot, users_list: Union[list[Users], tuple[Users]])
             "ВНИМАНИЕ❗❗❗\nРозыргыш отменяется админом!\n"
             "Приносим свои извенения за предоставленное неудобство("
         )
+
+
+async def wait_draw_start(draw: Draw, sleep_time: Union[int, float], bot: Bot):
+    await asyncio.sleep(sleep_time)
+    check_draw: Draw = await Draw.query.where(
+        Draw.Id == draw.Id
+    ).gino.first()
+    if check_draw.cancelled:
+        return
+    await check_draw.update(active=True).apply()
+    for admin in bot["config"].admin_ids:
+        await bot.send_photo(
+            admin,
+            photo=InputFile(draw.preview_photo_path),
+            caption=f"Розыгрыш стартовал! Он завершится в {check_draw.end_date}"
+        )
+    users = await Users.query.gino.all()
+    await draw_start(bot, users, draw)
+    await wait_draw_end(
+        draw,
+        (draw.end_date - draw.start_date).total_seconds(),
+        bot
+    )
+
+
+async def wait_draw_end(draw: Draw, sleep_time: Union[int, float], bot: Bot):
+    await asyncio.sleep(sleep_time)
+    check_draw: Draw = await Draw.query.where(
+        Draw.Id == draw.Id
+    ).gino.first()
+    if check_draw.cancelled:
+        return
+    await check_draw.update(active=False).apply()
+    members = await Users.join(DrawMember).select().where(
+        DrawMember.draw == draw.Id
+    ).gino.all()
+    if not members:
+        for admin in bot["config"].admin_ids:
+            if not members:
+                await bot.send_message(admin, "Участников нет, поэтому розыгрыш отменяется!")
+        return
+    manager = DrawMembersList(
+        {"A1": "Номер телефона пользователя", "B1": "ID в телеграм", "C1": "@username в Telegram"}
+    )
+    file_path = f"{DRAW_MEMBERS_FILE_PATH / draw.name}.xlsx"
+    manager.insert_data(members, file_path)
+    for admin in bot["config"].admin_ids:
+        await bot.send_photo(
+            admin,
+            InputFile(draw.preview_photo_path),
+            f"Розыгрыш завершился! Пора провести стрим и разыграть призы!"
+        )
+        await bot.send_document(
+            admin,
+            InputFile(file_path),
+            caption="Список участников. Пора устроить розыгрыш!"
+        )
+
+
+async def draw_monitoring(bot: Bot):
+    draws = await Draw.query.gino.all()
+    task_list = []
+    for draw in draws:
+        if not draw.cancelled and datetime.now() < draw.start_date:
+            task = await asyncio.create_task(wait_draw_start(
+                draw,
+                (draw.start_date - datetime.now()).total_seconds(),
+                bot
+            ))
+            task_list.append(task)
+        elif draw.cancelled or not draw.active or datetime.now() > draw.end_date:
+            continue
+        elif draw.start_date < datetime.now():
+            task = await asyncio.create_task(wait_draw_end(
+                draw,
+                (datetime.now() - draw.start_date).total_seconds(),
+                bot
+            ))
+            task_list.append(task)
+    await asyncio.gather(*task_list)

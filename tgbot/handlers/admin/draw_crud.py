@@ -5,13 +5,14 @@ from aiogram import Dispatcher
 from aiogram.dispatcher import FSMContext
 from aiogram.types import Message, ContentType, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, InputFile
 
-from tgbot.config import MAIN_DATE_FORMAT, DRAW_PHOTOS_DIR, HUMAN_READABLE_DATE_FORMAT
+from tgbot.config import MAIN_DATE_FORMAT, DRAW_PHOTOS_DIR, HUMAN_READABLE_DATE_FORMAT, DRAW_MEMBERS_FILE_PATH
 from tgbot.data.commands import COMMANDS
 from tgbot.filters.chat import PrivateChat
 from tgbot.filters.users import StaffFilter
 from tgbot.misc.states import AddDrawState, CancelDrawState, GetDrawInfoState
 from tgbot.models.models import Draw, Users, DrawMember, db
-from tgbot.utils.mailing import draw_start, draw_end, draw_cancelled
+from tgbot.services.excel import DrawMembersList
+from tgbot.utils.mailing import draw_start, draw_end, draw_cancelled, wait_draw_end, wait_draw_start
 
 
 async def plan_draw_command(message: Message):
@@ -112,10 +113,11 @@ async def create_draw(message: Message, state: FSMContext):
         )
         await message.answer(f"Розыгрыш активировался! Он завершится в {end_date}г.")
         await draw_start(message.bot, users, draw)
-        await asyncio.sleep(abs((end_date - start_date).total_seconds()))
-        check: Draw = await Draw.query.where(Draw.Id == draw.Id).gino.first()
-        if check.cancelled:
-            return
+        await wait_draw_end(
+            draw,
+            (start_date - datetime.now()).total_seconds(),
+            message.bot
+        )
     else:
         draw = await Draw.create(
             name=name, title=title, preview_photo_path=photo.name,
@@ -123,15 +125,11 @@ async def create_draw(message: Message, state: FSMContext):
             active=False
         )
         await message.answer(f"Розыгрыш активируется в {draw.start_date}г.!")
-        await asyncio.sleep(abs((start_date - datetime.now()).total_seconds()))
-        check: Draw = await Draw.query.where(Draw.Id == draw.Id).gino.first()
-        if check.cancelled:
-            return
-        await draw_start(message.bot, users, draw)
-        await message.answer(f"Розыгрыш активировался! Он завершится в {end_date}г.")
-        await asyncio.sleep(abs((end_date - start_date).total_seconds()))
-    await message.reply("Розыгрыш завершился! Пора провести стрим и разыграть призы!")
-    await draw_end(message.bot, users, draw)
+        await wait_draw_start(
+            draw,
+            (end_date - start_date).total_seconds(),
+            message.bot
+        )
 
 
 async def active_draws_list(message: Message):
@@ -243,11 +241,15 @@ async def get_draw_members(message: Message):
     send_draw: Draw = draws[0]
     keyboard.add(InlineKeyboardButton(
         "Следующий >>",
-        callback_data=f"!{draws[1]}"
+        callback_data=f"!{1}"
     )) if len(draws) > 1 else None
     keyboard.add(InlineKeyboardButton(
         "Список участников",
         callback_data=f"{send_draw.Id}"
+    ))
+    keyboard.add(InlineKeyboardButton(
+        "Отмена ❌",
+        callback_data="cancel"
     ))
     await message.answer("Отлично! Выберите подходящий розыгрыш")
     await message.bot.send_photo(
@@ -265,7 +267,7 @@ async def choose_draw(callback: CallbackQuery, state: FSMContext):
         keyboard = InlineKeyboardMarkup()
         skip_count = int(callback.data.split("!")[-1])
         async with db.transaction():
-            cursor = Draw.query.gino.iterate()
+            cursor = await Draw.query.gino.iterate()
             if skip_count:
                 await cursor.forward(skip_count)
             draws = await cursor.many(2)
@@ -276,8 +278,16 @@ async def choose_draw(callback: CallbackQuery, state: FSMContext):
         keyboard.add(InlineKeyboardButton(
             "<< Предыдущий",
             callback_data=f"!{skip_count - 1}"
-        )) if skip_count >= 0 else None
+        )) if skip_count > 0 else None
         send_draw = draws[0]
+        keyboard.add(InlineKeyboardButton(
+            "Список участников",
+            callback_data=f"{send_draw.Id}"
+        ))
+        keyboard.add(InlineKeyboardButton(
+            "Отмена ❌",
+            callback_data="cancel"
+        ))
         await callback.bot.delete_message(
             callback.from_user.id,
             callback.message.message_id
@@ -290,6 +300,12 @@ async def choose_draw(callback: CallbackQuery, state: FSMContext):
                     f"Даты проведения: {send_draw.start_date} - {send_draw.end_date}",
             reply_markup=keyboard
         )
+    elif callback.data == "cancel":
+        await callback.bot.delete_message(
+            callback.from_user.id,
+            callback.message.message_id
+        )
+        await state.finish()
     else:
         members = await DrawMember.join(Users).select().where(
             DrawMember.draw == int(callback.data)
@@ -305,11 +321,17 @@ async def choose_draw(callback: CallbackQuery, state: FSMContext):
             callback.from_user.id,
             callback.message.message_id
         )
+        await state.finish()
+        if not members_list:
+            await callback.bot.send_message(
+                callback.from_user.id,
+                "Участников нет"
+            )
+            return
         await callback.bot.send_message(
             callback.from_user.id,
             '\n'.join(members_list)
         )
-        await state.finish()
 
 
 def register_draw_handlers(dp: Dispatcher):
