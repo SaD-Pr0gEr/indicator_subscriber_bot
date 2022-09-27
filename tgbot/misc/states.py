@@ -35,3 +35,7 @@ class CancelDrawState(StatesGroup):
 
 class ParticipateDrawState(StatesGroup):
     choose_draw = State()
+
+
+class GetDrawInfoState(StatesGroup):
+    choose_draw = State()

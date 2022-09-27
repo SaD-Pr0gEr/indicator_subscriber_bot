@@ -23,7 +23,7 @@ async def draws_list(message: Message):
     if len(draws) > 1:
         keyboard.add(InlineKeyboardButton(
             "Следующий >>",
-            callback_data=f"{send_draw.Id}!{1}"
+            callback_data=f"!{1}"
         ))
     await ParticipateDrawState.choose_draw.set()
     keyboard.add(
@@ -40,7 +40,7 @@ async def draws_list(message: Message):
         message.from_user.id,
         InputFile(send_draw.preview_photo_path),
         caption=f"{send_draw.name}\n{send_draw.title}\n"
-                f"Победителей: {send_draw.winners_count}\n"
+                f"Победители: {send_draw.winners_count}\n"
                 f"Даты проведения: {send_draw.start_date} - {send_draw.end_date}",
         reply_markup=keyboard
     )
@@ -49,28 +49,22 @@ async def draws_list(message: Message):
 async def choose_draw(callback: CallbackQuery, state: FSMContext):
     keyboard = InlineKeyboardMarkup()
     if "!" in callback.data:
-        raw_data = callback.data.split("!")
-        current_draw, skip_count = tuple(map(
-            int, raw_data
-        ))
+        skip_count = int(callback.data.split("!")[-1])
         async with db.transaction():
-            cursor = await Draw.query.where(and_(
-                Draw.active == True,
-                Draw.Id != current_draw
-            )).gino.iterate()
-            draws = await cursor.many(2)
+            cursor = await Draw.query.where(
+                Draw.active == True
+            ).gino.iterate()
             if skip_count > 0:
                 await cursor.forward(skip_count)
-        send_draw = await Draw.query.where(
-            Draw.Id == current_draw
-        ).gino.first()
+            draws = await cursor.many(2)
+        send_draw = draws[0]
         if len(draws) > 1:
             keyboard.add(InlineKeyboardButton(
                 ">> Следующий",
-                callback_data=f"{draws[1].Id}!{skip_count + 1}"
+                callback_data=f"!{skip_count + 1}"
             ))
         keyboard.add(InlineKeyboardButton(
-            "<< Предыдущий", callback_data=f"{draws[0].Id}!{skip_count - 1}")
+            "<< Предыдущий", callback_data=f"!{skip_count - 1}")
         ) if skip_count - 1 >= 0 else None
         keyboard.add(
             InlineKeyboardButton(
@@ -82,11 +76,15 @@ async def choose_draw(callback: CallbackQuery, state: FSMContext):
                 callback_data="cancel"
             )
         )
+        await callback.bot.delete_message(
+            callback.from_user.id,
+            callback.message.message_id
+        )
         await callback.bot.send_photo(
             callback.from_user.id,
             InputFile(send_draw.preview_photo_path),
             caption=f"{send_draw.name}\n{send_draw.title}\n"
-                    f"Победителей: {send_draw.winners_count}\n"
+                    f"Победители: {send_draw.winners_count}\n"
                     f"Даты проведения: {send_draw.start_date} - {send_draw.end_date}",
             reply_markup=keyboard
         )
