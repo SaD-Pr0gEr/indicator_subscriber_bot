@@ -36,7 +36,6 @@ class DrawMembersList(BaseExcelManager):
     def insert_data(self, data_list: Union[list, tuple], file_path: str):
         row = 2
         for info in data_list:
-            print(info)
             self.sheet[row][0].value = info[1]
             self.sheet[row][1].value = info[2]
             self.sheet[row][2].value = info[4]

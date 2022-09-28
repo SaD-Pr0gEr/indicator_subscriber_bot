@@ -369,8 +369,8 @@ def register_draw_handlers(dp: Dispatcher):
         is_superuser=True
     )
     dp.register_message_handler(
-        all_draws, text=COMMANDS["all_draws"],
-        is_superuser=True
+        all_draws, StaffFilter(),
+        text=COMMANDS["all_draws"],
     )
     dp.register_message_handler(
         cancel_draw, text=COMMANDS["cancel_draw"],

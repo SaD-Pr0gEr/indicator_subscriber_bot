@@ -5,7 +5,7 @@ from tgbot.buttons.reply import (
     ADMINS_LIST, KICK_ADMIN,
     CALL_US, SEND_NUMBER, ADD_POST,
     ADD_DRAW, ALL_DRAWS, ACTIVE_DRAWS,
-    CANCEL_DRAW, DRAW_MEMBERS, BALANCE
+    CANCEL_DRAW, DRAW_MEMBERS, BALANCE, PERSONAL_QR_CODE
 )
 
 SUPERUSER_COMMANDS = ReplyKeyboardMarkup([
@@ -26,7 +26,7 @@ ADMIN_COMMANDS = ReplyKeyboardMarkup([
 
 USER_COMMANDS = ReplyKeyboardMarkup([
     [CALL_US, ACTIVE_DRAWS],
-    [BALANCE]
+    [BALANCE, PERSONAL_QR_CODE]
 ], resize_keyboard=True)
 
 

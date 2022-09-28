@@ -31,6 +31,10 @@ class Users(db.Model):
         default=0
     )
     subscribed_date = Column(Date)
+    qr_code_img_path = Column(
+        String,
+        nullable=True
+    )
 
     def __str__(self):
         return f"{self.phone_number}"

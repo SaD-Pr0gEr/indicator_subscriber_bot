@@ -1,17 +1,25 @@
-import qrcode
+from typing import Union
+
+from qrcode import QRCode
 from qrcode.image.styles.moduledrawers import RoundedModuleDrawer
 
-data = "GeeksforGeekdasdasdasdasdasdasdasdasds"
 
-qr = qrcode.QRCode(version=1,
-                   box_size=10,
-                   border=5)
+class QrGenerator(QRCode):
 
-qr.add_data(data)
+    def __init__(self, data: Union[str, int], file_path: str):
+        self.data = str(data)
+        self.qr_path = file_path
+        super().__init__(
+            version=1,
+            box_size=10,
+            border=5,
+        )
 
-qr.make(fit=True)
-img = qr.make_image(fill_color='black',
-                    back_color='white',
-                    module_drawer=RoundedModuleDrawer())
-
-img.save('MyQRCode2.png')
+    def generate_and_save_qr(self) -> str:
+        self.add_data(self.data)
+        self.make(fit=True)
+        img = self.make_image(fill_color='black',
+                              back_color='white',
+                              module_drawer=RoundedModuleDrawer())
+        img.save(self.qr_path)
+        return self.qr_path

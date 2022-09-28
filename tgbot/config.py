@@ -12,6 +12,7 @@ MEDIA_DIR = BASE_DIR / "media"
 DRAW_PHOTOS_DIR = MEDIA_DIR / "photos/draw"
 NEWS_PHOTOS_DIR = MEDIA_DIR / "photos/news"
 DRAW_MEMBERS_FILE_PATH = BASE_DIR / "data/excel/draw_members"
+USERS_QR_CODE_SAVE_PATH = MEDIA_DIR / "photos/users/qr_code"
 
 
 @dataclass
@@ -52,6 +53,8 @@ def load_config(path: str = None):
         os.makedirs(NEWS_PHOTOS_DIR)
     if not os.path.exists(DRAW_MEMBERS_FILE_PATH):
         os.makedirs(DRAW_MEMBERS_FILE_PATH)
+    if not os.path.exists(USERS_QR_CODE_SAVE_PATH):
+        os.makedirs(USERS_QR_CODE_SAVE_PATH)
     return Config(
         tg_bot=TgBot(
             token=env.str("BOT_TOKEN"),
