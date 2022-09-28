@@ -6,7 +6,7 @@ from typing import Union
 from aiogram import Bot
 from aiogram.types import InputFile
 
-from tgbot.config import Config, DRAW_MEMBERS_FILE_PATH
+from tgbot.config import DRAW_MEMBERS_FILE_PATH
 from tgbot.models.models import Draw, Users, DrawMember
 from tgbot.services.excel import DrawMembersList
 

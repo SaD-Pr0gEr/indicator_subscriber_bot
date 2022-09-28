@@ -16,7 +16,7 @@ async def admins_list(message: Message):
         await message.answer("Админов пока нет)")
         return
     admins = '\n'.join(list(map(
-        lambda model: f"@{model.username}" or model.tg_id,
+        lambda model: f"👤 @{model.username}" or f"👤 +{model.phone_number}",
         admins
     )))
     await message.answer(f"Список админов\n{admins}")
@@ -53,7 +53,7 @@ async def delete_admin_command(message: Message):
         return
     for i in admins:
         keyboard.add(InlineKeyboardButton(
-            f"{'@' + i.username or i.tg_id}",
+            f"{'@' + i.username or f'+{i.phone_number}'}",
             callback_data=f"{i.tg_id}"
         ))
     await DeleteAdminState.callback_state.set()
@@ -64,17 +64,17 @@ async def delete_admin_command(message: Message):
 
 
 async def delete_admin_callback(callback: CallbackQuery, state: FSMContext):
-    admin = await Users.query.where(
+    admin: Users = await Users.query.where(
         Users.tg_id == int(callback.data)
     ).gino.first()
-    await admin.delete()
+    await admin.update(is_admin=False).apply()
     await callback.bot.delete_message(
         callback.from_user.id,
         callback.message.message_id
     )
     await callback.bot.send_message(
         callback.from_user.id,
-        "Успешно удалил!"
+        "Успешно понизил!"
     )
     await state.finish()
 

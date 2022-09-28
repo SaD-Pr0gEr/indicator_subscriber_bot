@@ -21,10 +21,12 @@ async def all_subscribers(message: Message):
         return
     text = "\n".join(map(
         lambda model: f"👤 @{model.username}\n"
+                      f"🆔 Telegram Id: {model.tg_id}\n"
                       f"💰 Баланс: {model.balance}\n"
                       f'📅 Дата регистрации: {model.subscribed_date}\n'
         if model.username else
         f"👤 +{model.phone_number}\n"
+        f"🆔 Telegram Id: {model.tg_id}\n"
         f"💰 Баланс: {model.balance}\n"
         f"📅 Дата регистрации: {model.subscribed_date}\n",
         subs_db
