@@ -59,8 +59,8 @@ async def main():
         task_1 = loop.create_task(draw_monitoring(bot, loop))
         task_2 = loop.create_task(dp.start_polling())
         await asyncio.gather(task_1, task_2)
-        await on_shutdown(dp)
     finally:
+        await on_shutdown(dp)
         await dp.storage.close()
         await dp.storage.wait_closed()
         await bot.session.close()

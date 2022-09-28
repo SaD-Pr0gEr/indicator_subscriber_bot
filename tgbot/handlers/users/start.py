@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from aiogram import Dispatcher
 from aiogram.dispatcher import FSMContext
 from aiogram.types import Message, ContentType
@@ -43,10 +45,11 @@ async def get_user_number(message: Message, state: FSMContext):
     await Users.create(
         tg_id=message.from_user.id,
         username=message.from_user.username,
-        phone_number=number
+        phone_number=number,
+        balance=50, subscribed_date=datetime.now().date()
     )
     await message.answer(
-        "Отлично! Вы успешно зарегистрировались!",
+        "Отлично! Вы успешно зарегистрировались!\nВам начислено 50 баллов для старта!",
         reply_markup=define_keyboard(message.from_user.id, message.bot)
     )
 

@@ -1,5 +1,5 @@
 from gino import Gino
-from sqlalchemy import Column, Integer, BigInteger, String, Boolean, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, BigInteger, String, Boolean, DateTime, ForeignKey, Date
 
 db = Gino()
 
@@ -25,6 +25,12 @@ class Users(db.Model):
         nullable=False,
         unique=True
     )
+    balance = Column(
+        Integer,
+        nullable=False,
+        default=0
+    )
+    subscribed_date = Column(Date)
 
     def __str__(self):
         return f"{self.phone_number}"

@@ -41,7 +41,8 @@ async def draws_list(message: Message):
         InputFile(send_draw.preview_photo_path),
         caption=f"{send_draw.name}\n{send_draw.title}\n"
                 f"Победители: {send_draw.winners_count}\n"
-                f"Даты проведения: {send_draw.start_date} - {send_draw.end_date}",
+                f"Даты проведения: {send_draw.start_date} - {send_draw.end_date}"
+                f"Нажмите на отмена чтобы выйти",
         reply_markup=keyboard
     )
 
@@ -85,9 +86,11 @@ async def choose_draw(callback: CallbackQuery, state: FSMContext):
             InputFile(send_draw.preview_photo_path),
             caption=f"{send_draw.name}\n{send_draw.title}\n"
                     f"Победители: {send_draw.winners_count}\n"
-                    f"Даты проведения: {send_draw.start_date} - {send_draw.end_date}",
+                    f"Даты проведения: {send_draw.start_date} - {send_draw.end_date}\n"
+                    f"Нажмите на отмена чтобы выйти",
             reply_markup=keyboard
         )
+        return
     elif ":" in callback.data:
         raw_data = callback.data.split(":")
         draw_id, user_id = tuple(map(
@@ -101,7 +104,6 @@ async def choose_draw(callback: CallbackQuery, state: FSMContext):
                 callback.from_user.id,
                 "Вы не зарегистрированы!"
             )
-            await state.finish()
             await callback.bot.delete_message(
                 callback.from_user.id,
                 callback.message.message_id
@@ -135,11 +137,11 @@ async def choose_draw(callback: CallbackQuery, state: FSMContext):
             "Отлично! Вы учавствуете в розыгрыше!"
         )
     else:
-        await state.finish()
         await callback.bot.delete_message(
             callback.from_user.id,
             callback.message.message_id
         )
+    await state.finish()
 
 
 def register_user_draws(dp: Dispatcher):

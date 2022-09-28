@@ -19,11 +19,17 @@ async def all_subscribers(message: Message):
     if not subs_db:
         await message.answer("Подписчиков нет)")
         return
-    text = '\n'.join(list(map(
-        lambda model: f'@{model.username}' if model.username else f'+{model.phone_number}',
+    text = "\n".join(map(
+        lambda model: f"👤 @{model.username}\n"
+                      f"💰 Баланс: {model.balance}\n"
+                      f'📅 Дата регистрации: {model.subscribed_date}\n'
+        if model.username else
+        f"👤 +{model.phone_number}\n"
+        f"💰 Баланс: {model.balance}\n"
+        f"📅 Дата регистрации: {model.subscribed_date}\n",
         subs_db
-    )))
-    await message.answer(f"Список подписчиков\n{text}\nИтого: {len(subs_db)} шт.")
+    ))
+    await message.answer(f"Список подписчиков\n\n{text}\n\nИтого: {len(subs_db)} шт.")
 
 
 def register_start_handlers(dp: Dispatcher):

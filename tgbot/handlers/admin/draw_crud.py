@@ -1,18 +1,16 @@
-import asyncio
 from datetime import datetime
 
 from aiogram import Dispatcher
 from aiogram.dispatcher import FSMContext
 from aiogram.types import Message, ContentType, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, InputFile
 
-from tgbot.config import MAIN_DATE_FORMAT, DRAW_PHOTOS_DIR, HUMAN_READABLE_DATE_FORMAT, DRAW_MEMBERS_FILE_PATH
+from tgbot.config import MAIN_DATE_FORMAT, DRAW_PHOTOS_DIR, HUMAN_READABLE_DATE_FORMAT
 from tgbot.data.commands import COMMANDS
 from tgbot.filters.chat import PrivateChat
 from tgbot.filters.users import StaffFilter
 from tgbot.misc.states import AddDrawState, CancelDrawState, GetDrawInfoState
 from tgbot.models.models import Draw, Users, DrawMember, db
-from tgbot.services.excel import DrawMembersList
-from tgbot.utils.mailing import draw_start, draw_end, draw_cancelled, wait_draw_end, wait_draw_start
+from tgbot.utils.mailing import draw_start, draw_cancelled, wait_draw_end, wait_draw_start
 
 
 async def plan_draw_command(message: Message):
@@ -140,9 +138,10 @@ async def active_draws_list(message: Message):
         await message.answer("Активных розыгрышей нет!")
         return
     active_draws = tuple(map(
-        lambda model: f"ID: {model.Id}\n{model.name}\n"
-                      f"Дата проведения: {model.start_date} - {model.end_date}\n"
-                      f"Победители: {model.winners_count}",
+        lambda model: f"🆔 ID: {model.Id}\n"
+                      f"🔍 {model.name}\n"
+                      f"📅 Дата проведения: {model.start_date} - {model.end_date}\n"
+                      f"🏆 Победители: {model.winners_count}",
         active_draws
     ))
     await message.answer(
@@ -158,9 +157,10 @@ async def all_draws(message: Message):
         await message.answer("Розыгрышей нет!")
         return
     draws_list = tuple(map(
-        lambda model: f"ID: {model.Id}\n{model.name}\n"
-                      f"Дата проведения: {model.start_date} - {model.end_date}\n"
-                      f"Победители: {model.winners_count}\n\n",
+        lambda model: f"🆔 ID: {model.Id}\n"
+                      f"🔍 {model.name}\n"
+                      f"📅 Дата проведения: {model.start_date} - {model.end_date}\n"
+                      f"🏆 Победители: {model.winners_count}\n\n",
         draws_list
     ))
     await message.answer(

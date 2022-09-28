@@ -109,6 +109,8 @@ async def wait_draw_end(draw: Draw, sleep_time: Union[int, float], bot: Bot):
 async def draw_monitoring(bot: Bot, loop):
     draws = await Draw.query.where(Draw.cancelled == False).gino.all()
     if not draws:
+        for admin in bot["config"].tg_bot.admin_ids:
+            await bot.send_message(admin, "Мониторинг завершился... Розыгрышей нет")
         return
     task_list = []
     for draw in draws:
