@@ -15,12 +15,12 @@ async def admin_start(message: Message):
 
 
 async def all_subscribers(message: Message):
-    subs_db = await Users.query.gino.all()
+    subs_db: list[Users] = await Users.query.gino.all()
     if not subs_db:
         await message.answer("Подписчиков нет)")
         return
     text = '\n'.join(list(map(
-        lambda model: f"@{model.username or model.tg_id}",
+        lambda model: f'@{model.username}' if model.username else f'+{model.phone_number}',
         subs_db
     )))
     await message.answer(f"Список подписчиков\n{text}\nИтого: {len(subs_db)} шт.")

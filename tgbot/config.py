@@ -1,3 +1,4 @@
+import os.path
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -43,7 +44,14 @@ class Config:
 def load_config(path: str = None):
     env = Env()
     env.read_env(path)
-
+    if not os.path.exists(MEDIA_DIR):
+        os.mkdir(MEDIA_DIR)
+    if not os.path.exists(DRAW_PHOTOS_DIR):
+        os.makedirs(DRAW_PHOTOS_DIR)
+    if not os.path.exists(NEWS_PHOTOS_DIR):
+        os.makedirs(NEWS_PHOTOS_DIR)
+    if not os.path.exists(DRAW_MEMBERS_FILE_PATH):
+        os.makedirs(DRAW_MEMBERS_FILE_PATH)
     return Config(
         tg_bot=TgBot(
             token=env.str("BOT_TOKEN"),

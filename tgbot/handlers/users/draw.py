@@ -117,9 +117,10 @@ async def choose_draw(callback: CallbackQuery, state: FSMContext):
                 "Розыргыш уже завершился!"
             )
             return
-        if await DrawMember.query.where(
-                DrawMember.member == check_user.Id,
-        ).gino.first():
+        if await DrawMember.query.where(and_(
+            DrawMember.member == check_user.Id,
+            DrawMember.draw == draw.Id
+        )).gino.first():
             await callback.bot.send_message(
                 callback.from_user.id,
                 "Вы и так учавствуете!"

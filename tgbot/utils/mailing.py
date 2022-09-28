@@ -1,4 +1,5 @@
 import asyncio
+import os
 from datetime import datetime
 from typing import Union
 
@@ -56,7 +57,7 @@ async def wait_draw_start(draw: Draw, sleep_time: Union[int, float], bot: Bot):
     if check_draw.cancelled:
         return
     await check_draw.update(active=True).apply()
-    for admin in bot["config"].admin_ids:
+    for admin in bot["config"].tg_bot.admin_ids:
         await bot.send_photo(
             admin,
             photo=InputFile(draw.preview_photo_path),
@@ -83,16 +84,15 @@ async def wait_draw_end(draw: Draw, sleep_time: Union[int, float], bot: Bot):
         DrawMember.draw == draw.Id
     ).gino.all()
     if not members:
-        for admin in bot["config"].admin_ids:
-            if not members:
-                await bot.send_message(admin, "Участников нет, поэтому розыгрыш отменяется!")
+        for admin in bot["config"].tg_bot.admin_ids:
+            await bot.send_message(admin, "Участников нет, поэтому розыгрыш отменяется!")
         return
     manager = DrawMembersList(
-        {"A1": "Номер телефона пользователя", "B1": "ID в телеграм", "C1": "@username в Telegram"}
+        {"A1": "ID в телеграм", "B1": "@username в Telegram", "C1": "Номер телефона"}
     )
     file_path = f"{DRAW_MEMBERS_FILE_PATH / draw.name}.xlsx"
     manager.insert_data(members, file_path)
-    for admin in bot["config"].admin_ids:
+    for admin in bot["config"].tg_bot.admin_ids:
         await bot.send_photo(
             admin,
             InputFile(draw.preview_photo_path),
@@ -103,26 +103,38 @@ async def wait_draw_end(draw: Draw, sleep_time: Union[int, float], bot: Bot):
             InputFile(file_path),
             caption="Список участников. Пора устроить розыгрыш!"
         )
+    os.remove(file_path)
 
 
-async def draw_monitoring(bot: Bot):
-    draws = await Draw.query.gino.all()
+async def draw_monitoring(bot: Bot, loop):
+    draws = await Draw.query.where(Draw.cancelled == False).gino.all()
+    if not draws:
+        return
     task_list = []
     for draw in draws:
-        if not draw.cancelled and datetime.now() < draw.start_date:
-            task = await asyncio.create_task(wait_draw_start(
+        if datetime.now() < draw.start_date:
+            task = loop.create_task(wait_draw_start(
                 draw,
                 (draw.start_date - datetime.now()).total_seconds(),
                 bot
             ))
             task_list.append(task)
-        elif draw.cancelled or not draw.active or datetime.now() > draw.end_date:
+        elif not draw.active or datetime.now() > draw.end_date:
             continue
         elif draw.start_date < datetime.now():
-            task = await asyncio.create_task(wait_draw_end(
+            task = loop.create_task(wait_draw_end(
                 draw,
-                (datetime.now() - draw.start_date).total_seconds(),
+                (draw.end_date - datetime.now()).total_seconds(),
                 bot
             ))
             task_list.append(task)
-    await asyncio.gather(*task_list)
+    for admin in bot["config"].tg_bot.admin_ids:
+        if not task_list:
+            await bot.send_message(admin, "Мониторинг завершился... Розыгрышей нет")
+        else:
+            await bot.send_message(
+                admin,
+                f"Мониторинг завершился... Найдены и активированы {len(task_list)} розыгрышы!"
+            )
+    if task_list:
+        await asyncio.gather(*task_list)

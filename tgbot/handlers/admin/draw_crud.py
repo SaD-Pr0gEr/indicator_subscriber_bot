@@ -106,7 +106,7 @@ async def create_draw(message: Message, state: FSMContext):
         destination_dir=DRAW_PHOTOS_DIR
     )
     users = await Users.query.gino.all()
-    if end_date > start_date:
+    if datetime.now() >= start_date:
         draw = await Draw.create(
             name=name, title=title, preview_photo_path=photo.name,
             start_date=start_date, end_date=end_date, winners_count=winners_count
@@ -115,7 +115,7 @@ async def create_draw(message: Message, state: FSMContext):
         await draw_start(message.bot, users, draw)
         await wait_draw_end(
             draw,
-            (start_date - datetime.now()).total_seconds(),
+            (end_date - datetime.now()).total_seconds(),
             message.bot
         )
     else:
@@ -127,7 +127,7 @@ async def create_draw(message: Message, state: FSMContext):
         await message.answer(f"Розыгрыш активируется в {draw.start_date}г.!")
         await wait_draw_start(
             draw,
-            (end_date - start_date).total_seconds(),
+            (datetime.now() - start_date).total_seconds(),
             message.bot
         )
 

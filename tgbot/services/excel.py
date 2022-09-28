@@ -1,3 +1,4 @@
+import os.path
 from typing import Union
 
 from openpyxl.workbook import Workbook
@@ -35,8 +36,9 @@ class DrawMembersList(BaseExcelManager):
     def insert_data(self, data_list: Union[list, tuple], file_path: str):
         row = 2
         for info in data_list:
-            self.sheet[row][1].value = info["phone_number"]
-            self.sheet[row][2].value = info["tg_id"]
-            self.sheet[row][4].value = info["tg_username"]
+            print(info)
+            self.sheet[row][0].value = info[1]
+            self.sheet[row][1].value = info[2]
+            self.sheet[row][2].value = info[4]
             row += 1
         self.save_and_close(file_path)

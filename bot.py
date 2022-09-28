@@ -21,8 +21,6 @@ async def on_startup(bot: Bot):
             i,
             "Бот запущен! Идёт проверка и обновление розыгрышей"
         )
-    task = asyncio.create_task(draw_monitoring(bot))
-    await asyncio.gather(task)
 
 
 async def on_shutdown(dp: Dispatcher):
@@ -56,8 +54,10 @@ async def main():
         await db.set_bind(f"postgresql://"
                           f"{config.db.user}:{config.db.password}@"
                           f"{config.db.host}:5432/{config.db.database}")
-        task_1 = dp.start_polling()
-        task_2 = on_startup(bot)
+        await on_startup(bot)
+        loop = asyncio.get_event_loop()
+        task_1 = loop.create_task(draw_monitoring(bot, loop))
+        task_2 = loop.create_task(dp.start_polling())
         await asyncio.gather(task_1, task_2)
         await on_shutdown(dp)
     finally:
