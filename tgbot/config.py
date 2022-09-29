@@ -11,7 +11,7 @@ HUMAN_READABLE_DATE_FORMAT = "дд.мм.ГГГГ!часы:минуты:секу�
 MEDIA_DIR = BASE_DIR / "media"
 DRAW_PHOTOS_DIR = MEDIA_DIR / "photos/draw"
 NEWS_PHOTOS_DIR = MEDIA_DIR / "photos/news"
-DRAW_MEMBERS_FILE_PATH = BASE_DIR / "data/excel/draw_members"
+DRAW_MEMBERS_FILE_PATH = BASE_DIR / "program_data/excel/draw_members"
 USERS_QR_CODE_SAVE_PATH = MEDIA_DIR / "photos/users/qr_code"
 
 
