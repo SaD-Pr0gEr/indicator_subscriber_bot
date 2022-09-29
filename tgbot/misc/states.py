@@ -39,3 +39,9 @@ class ParticipateDrawState(StatesGroup):
 
 class GetDrawInfoState(StatesGroup):
     choose_draw = State()
+
+
+class UserBonusesState(StatesGroup):
+    choose_command = State()
+    choose_bonus_type = State()
+    personal_bonus = State()

@@ -12,5 +12,9 @@ COMMANDS = {
     "cancel_draw": "Отменить розыгрыш ❌",
     "draw_members": "Участники розыгрышей 👨👩",
     "balance": "💰 Мой баланс",
-    "personal_qr": "Генерировать персональный QR 🤳"
+    "personal_qr": "Создать личный QR код 🤳",
+    "get_personal_qr": "Мой личный QR код 🤳",
+    "bought_bonus": "Бонус за покупку 🤑💰",
+    "service_bonus": "Бонус за услугу 🤑🎖️",
+    "personal_bonus": "Персональный бонус 🤑👤",
 }

@@ -32,8 +32,29 @@ async def generate_users_qr_command(message: Message):
     )
 
 
+async def my_qr(message: Message):
+    user: Users = await Users.query.where(
+        Users.tg_id == message.from_user.id
+    ).gino.first()
+    if not user:
+        await message.answer("Вы не зарегистрированы!")
+        return
+    if not user.qr_code_img_path:
+        await message.answer("У вас нет QR кода! Сначала генерируйте его")
+        return
+    await message.bot.send_photo(
+        message.from_user.id,
+        InputFile(user.qr_code_img_path),
+        caption="Ваш личный QR код"
+    )
+
+
 def register_user_qr_handlers(dp: Dispatcher):
     dp.register_message_handler(
         generate_users_qr_command, PrivateChat(),
         text=COMMANDS["personal_qr"]
+    )
+    dp.register_message_handler(
+        my_qr, PrivateChat(),
+        text=COMMANDS["get_personal_qr"]
     )
