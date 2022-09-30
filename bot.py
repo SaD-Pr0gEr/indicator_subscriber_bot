@@ -8,7 +8,7 @@ from aiogram.contrib.fsm_storage.redis import RedisStorage2
 from tgbot.config import load_config, BASE_DIR, Config
 from tgbot.filters import register_all_filters
 from tgbot.handlers import register_all_handlers
-from tgbot.models.models import db
+from tgbot.models.models import db, Users
 from tgbot.utils.mailing import draw_monitoring
 
 logger = logging.getLogger(__name__)

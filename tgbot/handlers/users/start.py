@@ -5,6 +5,7 @@ from aiogram.dispatcher import FSMContext
 from aiogram.types import Message, ContentType
 
 from tgbot.data.commands import COMMANDS
+from tgbot.data.general import BONUSES
 from tgbot.filters.chat import PrivateChat
 from tgbot.keyboards.reply import USER_SEND_NUMBER
 from tgbot.misc.states import UserSignUp
@@ -18,6 +19,20 @@ async def user_start(message: Message):
     ).gino.first()
     if not user:
         await UserSignUp.phone_number.set()
+        if "R" in message.text:
+            referrer_id = int(message.text.split("R")[-1])
+            referrer: Users = await Users.query.where(
+                Users.tg_id == referrer_id
+            ).gino.first()
+            if referrer:
+                referrer_bonus = BONUSES["referrer_bonus"]
+                await referrer.update(
+                    balance=referrer.balance + referrer_bonus
+                ).apply()
+                await message.bot.send_message(
+                    referrer.tg_id,
+                    f"Вам начислено {referrer_bonus} баллов как реферальный бонус!"
+                )
         await message.reply(
             "Привет! Чтобы подписаться отправьте мне свой номер телефона",
             reply_markup=USER_SEND_NUMBER
@@ -62,6 +77,13 @@ async def call_command(message: Message):
     )
 
 
+async def get_referral_link_command(message: Message):
+    bot = await message.bot.get_me()
+    await message.answer(
+        f"Ваша реферальная ссылка\bhttps://t.me/{bot.username}?start=R{message.from_user.id}"
+    )
+
+
 def register_user_start_handlers(dp: Dispatcher):
     dp.register_message_handler(
         user_start, PrivateChat(),
@@ -76,4 +98,8 @@ def register_user_start_handlers(dp: Dispatcher):
     dp.register_message_handler(
         call_command, PrivateChat(),
         text=COMMANDS["call_us"]
+    )
+    dp.register_message_handler(
+        get_referral_link_command, PrivateChat(),
+        text=COMMANDS["my_referral_link"]
     )
