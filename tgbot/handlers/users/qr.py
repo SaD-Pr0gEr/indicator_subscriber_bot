@@ -21,7 +21,7 @@ async def generate_users_qr_command(message: Message):
     await asyncio.sleep(2)
     bot = await message.bot.get_me()
     qr_path = QrGenerator(
-        f"https://t.me/{bot.username}?start=user_personal_qr-{user.tg_id}",
+        f"https://t.me/{bot.username}?start=R{user.tg_id}",
         f"{USERS_QR_CODE_SAVE_PATH / str(user.Id)}.png"
     ).generate_and_save_qr()
     await user.update(qr_code_img_path=qr_path).apply()

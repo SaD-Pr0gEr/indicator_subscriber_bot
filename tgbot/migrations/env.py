@@ -17,7 +17,7 @@ if config.config_file_name is not None:
 target_metadata = db
 env = Env()
 env.read_env(BASE_DIR / ".env")
-DATABASE_URL = f"postgresql://{env.str('DB_USER')}:{env.str('PG_PASSWORD')}" \
+DATABASE_URL = f"postgresql://{env.str('DB_USER')}:{env.str('DB_PASS')}" \
                f"@{env.str('DB_HOST')}:5432/{env.str('DB_NAME')}"
 
 
